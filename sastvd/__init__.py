@@ -108,8 +108,8 @@ def subprocess_cmd(command: str, verbose: int = 0, force_shell: bool = False):
     >>> b
     """
     singularity = os.getenv("SINGULARITY")
-    if singularity != "true" and not force_shell:
-        command = f"singularity exec {project_dir() / 'main.sif'} " + command
+    # if singularity != "true" and not force_shell:
+    #     command = f"singularity exec {project_dir() / 'main.sif'} " + command
     process = subprocess.Popen(
         command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True
     )
@@ -123,8 +123,8 @@ def subprocess_cmd(command: str, verbose: int = 0, force_shell: bool = False):
 def watch_subprocess_cmd(command: str, force_shell: bool = False):
     """Run subprocess and monitor output. Used for debugging purposes."""
     singularity = os.getenv("SINGULARITY")
-    if singularity != "true" and not force_shell:
-        command = f"singularity exec {project_dir() / 'main.sif'} " + command
+    # if singularity != "true" and not force_shell:
+    #     command = f"singularity exec {project_dir() / 'main.sif'} " + command
     process = subprocess.Popen(
         command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
     )
@@ -172,6 +172,7 @@ def dfmp(df, function, columns=None, ordr=True, workers=6, cs=10, desc="Run: "):
     """
     if isinstance(columns, str):
         items = df[columns].tolist()
+        # print("items",items)
     elif isinstance(columns, list):
         items = df[columns].to_dict("records")
     elif isinstance(df, pd.DataFrame):
@@ -187,6 +188,7 @@ def dfmp(df, function, columns=None, ordr=True, workers=6, cs=10, desc="Run: "):
         map_func = getattr(p, "imap" if ordr else "imap_unordered")
         for ret in tqdm(map_func(function, items, cs), total=len(items), desc=desc):
             processed.append(ret)
+
     return processed
 
 

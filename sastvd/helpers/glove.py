@@ -32,24 +32,25 @@ def glove(
     COOCCURRENCE_SHUF_FILE = savedir / COOCCURRENCE_SHUF_FILE
     SAVE_FILE = savedir / SAVE_FILE
 
-    cmd1 = f"vocab_count \
+    GLOVE_PATH = "/home/mars/experiences/GloVe/build/"
+    cmd1 = f"{GLOVE_PATH}vocab_count \
         -min-count {VOCAB_MIN_COUNT} \
         -verbose {VERBOSE} \
         < {CORPUS} > {VOCAB_FILE}"
 
-    cmd2 = f"cooccur \
+    cmd2 = f"{GLOVE_PATH}cooccur \
         -memory {MEMORY} \
         -vocab-file {VOCAB_FILE} \
         -verbose {VERBOSE} \
         -window-size {WINDOW_SIZE} \
         < {CORPUS} > {COOCCURRENCE_FILE}"
 
-    cmd3 = f"shuffle \
+    cmd3 = f"{GLOVE_PATH}shuffle \
         -memory {MEMORY} \
         -verbose {VERBOSE} \
         < {COOCCURRENCE_FILE} > {COOCCURRENCE_SHUF_FILE}"
 
-    cmd4 = f"glove \
+    cmd4 = f"{GLOVE_PATH}glove \
         -save-file {SAVE_FILE} \
         -threads {NUM_THREADS} \
         -input-file {COOCCURRENCE_SHUF_FILE} \
@@ -74,6 +75,7 @@ def glove_dict(vectors_path, cache=True):
     # Caching
     savepath = svd.get_dir(svd.cache_dir() / "glove")
     savepath /= str(svd.hashstr(str(vectors_path)))
+    # print("glove path:", savepath)
     if cache:
         try:
             with open(savepath, "rb") as f:

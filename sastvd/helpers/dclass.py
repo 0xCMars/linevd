@@ -18,15 +18,34 @@ class BigVulDataset:
             int(Path(i).name.split(".")[0])
             for i in glob(str(svd.processed_dir() / "bigvul/before/*nodes*"))
         ]
+        # print(len(self.finished))
         self.df = svdds.bigvul(splits=splits)
+        # print("1",self.df.keys())
+        # print(self.df.tail(5))
+
         self.partition = partition
         self.df = self.df[self.df.label == partition]
         self.df = self.df[self.df.id.isin(self.finished)]
+        # print("2",self.df.keys())
+        # print(self.df.tail(5))
 
         # Balance training set
-        if partition == "train" or partition == "val":
+        if partition == "train":
+            # print(self.df["vul"].head(100))
             vul = self.df[self.df.vul == 1]
-            nonvul = self.df[self.df.vul == 0].sample(len(vul), random_state=0)
+            # print("vul :", vul.shape)
+            # x = self.df[self.df.vul == 0]
+            # print("nonvul :", x.shape)
+            # vul = vul.sample(128, random_state=0)
+            nonvul = self.df[self.df.vul == 0]
+            nonvul = nonvul.sample(min(len(vul), len(nonvul)), random_state=0)
+            # print("nonvul :", nonvul.head())
+            self.df = pd.concat([vul, nonvul])
+        if partition == "val":
+            # vul = self.df[self.df.vul == 1].sample(128, random_state=0)
+            vul = self.df[self.df.vul == 1]
+            nonvul = self.df[self.df.vul == 0]
+            nonvul = nonvul.sample(min(len(vul), len(nonvul)), random_state=0)
             self.df = pd.concat([vul, nonvul])
 
         # Correct ratio for test set
@@ -36,28 +55,40 @@ class BigVulDataset:
             nonvul = nonvul.sample(min(len(nonvul), len(vul) * 20), random_state=0)
             self.df = pd.concat([vul, nonvul])
 
+        # print("3",self.df.keys())
+        # print(self.df.head(5))
+
         # Small sample (for debugging):
         if sample > 0:
             self.df = self.df.sample(sample, random_state=0)
+        # print("3.1",self.df.keys())
 
         # Filter only vulnerable
         if vulonly:
             self.df = self.df[self.df.vul == 1]
+        # print("3.2",self.df.keys())
 
         # Filter out samples with no lineNumber from Joern output
         self.df["valid"] = svd.dfmp(
-            self.df, BigVulDataset.check_validity, "id", desc="Validate Samples: "
+            self.df, BigVulDataset.check_validity, 'id', desc="Validate Samples: "
         )
+        # print("3.3",self.df.keys())
+        # print(self.df["valid"].head(5))
+        # print(self.df["valid"])
         self.df = self.df[self.df.valid]
+        # print("4",self.df.shape)
 
         # Get mapping from index to sample ID.
         self.df = self.df.reset_index(drop=True).reset_index()
         self.df = self.df.rename(columns={"index": "idx"})
+        # print("5",self.df.shape)
+
         self.idx2id = pd.Series(self.df.id.values, index=self.df.idx).to_dict()
 
         # Load Glove vectors.
         glove_path = svd.processed_dir() / "bigvul/glove_False/vectors.txt"
         self.emb_dict, _ = svdglove.glove_dict(glove_path)
+        print("finish")
 
     def itempath(_id):
         """Get itempath path from item id."""
@@ -74,6 +105,7 @@ class BigVulDataset:
         valid = 0
         try:
             with open(str(BigVulDataset.itempath(_id)) + ".nodes.json", "r") as f:
+                # print(str(BigVulDataset.itempath(_id)) + ".nodes.json")
                 nodes = json.load(f)
                 lineNums = set()
                 for n in nodes:

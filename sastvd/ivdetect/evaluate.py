@@ -61,6 +61,7 @@ def get_dep_add_lines_bigvul(cache=True):
     df = df[df.vul == 1]
     desc = "Getting dependent-added lines: "
     lines_dict = svd.dfmp(df, helper, ["id", "removed", "added"], ordr=False, desc=desc)
+    # print(lines_dict.head())
     lines_dict = dict(lines_dict)
     with open(saved, "wb") as f:
         pkl.dump(lines_dict, f)

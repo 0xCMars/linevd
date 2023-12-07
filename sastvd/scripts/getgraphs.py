@@ -10,13 +10,15 @@ import sastvd.helpers.sast as sast
 
 # SETUP
 NUM_JOBS = 100
+print(sys.argv)
+# 0-5 55
 JOB_ARRAY_NUMBER = 0 if "ipykernel" in sys.argv[0] else int(sys.argv[1]) - 1
 
 # Read Data
 df = svdd.bigvul()
 df = df.iloc[::-1]
 splits = np.array_split(df, NUM_JOBS)
-
+print(len(splits))
 
 def preprocess(row):
     """Parallelise svdj functions.
@@ -27,6 +29,7 @@ def preprocess(row):
     row = df.iloc[177860]  # EDGE CASE 1
     preprocess(row)
     """
+    print("process", row["id"])
     savedir_before = svd.get_dir(svd.processed_dir() / row["dataset"] / "before")
     savedir_after = svd.get_dir(svd.processed_dir() / row["dataset"] / "after")
 

@@ -26,7 +26,6 @@ from dgl.nn.pytorch import GATConv, GraphConv
 from sklearn.metrics import PrecisionRecallDisplay, precision_recall_curve
 from tqdm import tqdm
 
-
 def ne_groupnodes(n, e):
     """Group nodes with same line number."""
     nl = n[n.lineNumber != ""].copy()
@@ -103,9 +102,11 @@ class BigVulDatasetLineVD(svddc.BigVulDataset):
     def __init__(self, gtype="pdg", feat="all", **kwargs):
         """Init."""
         super(BigVulDatasetLineVD, self).__init__(**kwargs)
+        print("BigVulDatasetLineVD process")
         lines = ivde.get_dep_add_lines_bigvul()
         lines = {k: set(list(v["removed"]) + v["depadd"]) for k, v in lines.items()}
         self.lines = lines
+        # print(len(self.lines))
         self.graph_type = gtype
         glove_path = svd.processed_dir() / "bigvul/glove_False/vectors.txt"
         self.glove_dict, _ = svdg.glove_dict(glove_path)
@@ -223,55 +224,79 @@ class BigVulDatasetLineVDDataModule(pl.LightningDataModule):
     ):
         """Init class from bigvul dataset."""
         super().__init__()
-        dataargs = {"sample": sample, "gtype": gtype, "splits": splits, "feat": feat}
-        self.train = BigVulDatasetLineVD(partition="train", **dataargs)
-        self.val = BigVulDatasetLineVD(partition="val", **dataargs)
-        self.test = BigVulDatasetLineVD(partition="test", **dataargs)
-        codebert = cb.CodeBert()
-        self.train.cache_codebert_method_level(codebert)
-        self.val.cache_codebert_method_level(codebert)
-        self.test.cache_codebert_method_level(codebert)
-        self.train.cache_items(codebert)
-        self.val.cache_items(codebert)
-        self.test.cache_items(codebert)
+        self.dataargs = {"sample": sample, "gtype": gtype, "splits": splits, "feat": feat}
+        # print("BigVulDatasetLineVDDataModule Train")
+        # self.train = BigVulDatasetLineVD(partition="train", **dataargs)
+        # print("BigVulDatasetLineVDDataModule val")
+        # self.val = BigVulDatasetLineVD(partition="val", **dataargs)
+        # print("BigVulDatasetLineVDDataModule test")
+        # self.test = BigVulDatasetLineVD(partition="test", **dataargs)
+        self.codebert = cb.CodeBert()
+        # self.train.cache_codebert_method_level(codebert)
+        # self.val.cache_codebert_method_level(codebert)
+        # self.test.cache_codebert_method_level(codebert)
+        # self.train.cache_items(codebert)
+        # self.val.cache_items(codebert)
+        # self.test.cache_items(codebert)
         self.batch_size = batch_size
+        print(self.batch_size)
         self.nsampling = nsampling
         self.nsampling_hops = nsampling_hops
 
     def node_dl(self, g, shuffle=False):
         """Return node dataloader."""
         sampler = dgl.dataloading.MultiLayerFullNeighborSampler(self.nsampling_hops)
-        return dgl.dataloading.NodeDataLoader(
+        print("node_dl:", self.batch_size)
+        return dgl.dataloading.DataLoader(
             g,
             g.nodes(),
             sampler,
             batch_size=self.batch_size,
             shuffle=shuffle,
             drop_last=False,
-            num_workers=1,
+            pin_memory=True,
+            num_workers=2,
         )
 
     def train_dataloader(self):
         """Return train dataloader."""
+        print("BigVulDatasetLineVDDataModule Train")
+        train = BigVulDatasetLineVD(partition="train", **self.dataargs)
+        train.cache_codebert_method_level(self.codebert)
+        train.cache_items(self.codebert)
+        print(len(train))
         if self.nsampling:
-            g = next(iter(GraphDataLoader(self.train, batch_size=len(self.train))))
+            g = next(iter(GraphDataLoader(train, batch_size=len(train))))
             return self.node_dl(g, shuffle=True)
         return GraphDataLoader(self.train, shuffle=True, batch_size=self.batch_size)
 
     def val_dataloader(self):
         """Return val dataloader."""
+        print("BigVulDatasetLineVDDataModule val")
+        val = BigVulDatasetLineVD(partition="val", **self.dataargs)
+        val.cache_codebert_method_level(self.codebert)
+        val.cache_items(self.codebert)
         if self.nsampling:
-            g = next(iter(GraphDataLoader(self.val, batch_size=len(self.val))))
+            g = next(iter(GraphDataLoader(val, batch_size=len(val))))
             return self.node_dl(g)
-        return GraphDataLoader(self.val, batch_size=self.batch_size)
+        return GraphDataLoader(self.val, pin_memory=True, batch_size=self.batch_size)
 
     def val_graph_dataloader(self):
         """Return test dataloader."""
-        return GraphDataLoader(self.val, batch_size=32)
+        print("BigVulDatasetLineVDDataModule val")
+        val = BigVulDatasetLineVD(partition="val", **self.dataargs)
+        val.cache_codebert_method_level(self.codebert)
+        val.cache_items(self.codebert)
+
+        return GraphDataLoader(val, batch_size=32, pin_memory=True)
 
     def test_dataloader(self):
         """Return test dataloader."""
-        return GraphDataLoader(self.test, batch_size=32)
+        print("BigVulDatasetLineVDDataModule test")
+        test = BigVulDatasetLineVD(partition="test", **self.dataargs)
+        test.cache_codebert_method_level(self.codebert)
+        test.cache_items(self.codebert)
+        return GraphDataLoader(test, batch_size=32, pin_memory=True)
 
 
 # %%
@@ -303,7 +328,7 @@ class LitGNN(pl.LightningModule):
         self.lr = lr
         self.random = random
         self.save_hyperparameters()
-
+        print(self.hparams)
         # Set params based on embedding type
         if self.hparams.embtype == "codebert":
             self.hparams.embfeat = 768
@@ -545,9 +570,10 @@ class LitGNN(pl.LightningModule):
         if self.hparams.methodlevel:
             labels_f = labels
             return logits[0], labels_f, dgl.unbatch(batch)
-
+        # print("not methodlevel")
         batch.ndata["pred"] = F.softmax(logits[0], dim=1)
         batch.ndata["pred_func"] = F.softmax(logits[1], dim=1)
+        # _f represent function
         logits_f = []
         labels_f = []
         preds = []
@@ -605,9 +631,12 @@ class LitGNN(pl.LightningModule):
                     )
             all_true = all_true.long()
         else:
+            print("len(outputs):", len(outputs))
             for out in outputs:
-                all_pred = th.cat([all_pred, out[0][0]])
-                all_true = th.cat([all_true, out[1][0]])
+                # logits[0]
+                all_pred = th.cat([all_pred, out[0][0].cuda()])
+                # label
+                all_true = th.cat([all_true, out[1][0].cuda()])
                 all_pred_f += out[0][1]
                 all_true_f += out[1][1]
                 all_funcs += out[2]
@@ -619,6 +648,15 @@ class LitGNN(pl.LightningModule):
         self.all_pred = all_pred
         self.all_pred_f = all_pred_f
         self.all_true_f = all_true_f
+
+        print("all_funcs:", len(all_funcs))
+        print(all_funcs[0])
+        print("all_true:", all_true.shape)
+        print(all_true[0])
+        print("all_pred:", all_pred.shape)
+        print(all_pred[0])
+        print("all_pred_f:", len(all_pred_f))
+        print("all_true_f:", len(all_true_f))
 
         # Custom ranked accuracy (inc negatives)
         self.res1 = ivde.eval_statements_list(all_funcs)
@@ -634,7 +672,10 @@ class LitGNN(pl.LightningModule):
             multitask_pred += [list(i[0]) if i[1] == 1 else [1, 0] for i in line_pred]
             multitask_true += list(af[1])
         self.linevd_pred = multitask_pred
+        print(self.linevd_pred[0])
         self.linevd_true = multitask_true
+        print(self.linevd_true[0])
+
         multitask_true = th.LongTensor(multitask_true)
         multitask_pred = th.Tensor(multitask_pred)
         self.f1thresh = ml.best_f1(multitask_true, [i[1] for i in multitask_pred])

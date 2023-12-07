@@ -1,5 +1,5 @@
 Bootstrap:docker
-From:pytorch/pytorch:1.9.0-cuda10.2-cudnn7-runtime
+From:pytorch/pytorch:1.9.0-cuda11.1-cudnn8-runtime
 
 %files
     cli.sh /cli.sh
@@ -26,18 +26,18 @@ From:pytorch/pytorch:1.9.0-cuda10.2-cudnn7-runtime
     make
 
     # Install cppcheck
-    cd /
-    curl -L https://github.com/danmar/cppcheck/archive/refs/tags/2.5.tar.gz > cppcheck2.5.tar.gz    
-    mkdir cppcheck
-    mv cppcheck2.5.tar.gz cppcheck
-    cd cppcheck
-    tar -xzvf cppcheck2.5.tar.gz
-    cd cppcheck-2.5
-    mkdir build
-    cd build
-    cmake ..
-    cmake --build .
-    make install
+    # cd /
+    # curl -L https://github.com/danmar/cppcheck/archive/refs/tags/2.5.tar.gz > cppcheck2.5.tar.gz    
+    # mkdir cppcheck
+    # mv cppcheck2.5.tar.gz cppcheck
+    # cd cppcheck
+    # tar -xzvf cppcheck2.5.tar.gz
+    # cd cppcheck-2.5
+    # mkdir build
+    # cd build
+    # cmake ..
+    # cmake --build .
+    # make install
 
     # Install Joern
     cd /
@@ -52,18 +52,18 @@ From:pytorch/pytorch:1.9.0-cuda10.2-cudnn7-runtime
     bash Miniconda3-latest-Linux-x86_64.sh -b
 
     # Install RATS
-    cd /
-    curl -L https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/rough-auditing-tool-for-security/rats-2.4.tgz > rats-2.4.tgz
-    tar -xzvf rats-2.4.tgz
-    cd rats-2.4
-    ./configure && make && make install
+    # cd /
+    # curl -L https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/rough-auditing-tool-for-security/rats-2.4.tgz > rats-2.4.tgz
+    # tar -xzvf rats-2.4.tgz
+    # cd rats-2.4
+    # ./configure && make && make install
 
     # Install flawfinder
-    pip install flawfinder
+    # pip install flawfinder
 
     # Install python dependencies here
     cat /requirements.txt | xargs -n 1 pip install
-    pip install dgl-cu102 -f https://data.dgl.ai/wheels/repo.html
+    pip install dgl-cu117 -f https://data.dgl.ai/wheels/repo.html
     conda install -y pygraphviz
     pip install nltk
     python -c 'import nltk; nltk.download("punkt")'

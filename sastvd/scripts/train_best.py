@@ -32,11 +32,11 @@ trainable = tune.with_parameters(
 
 analysis = tune.run(
     trainable,
-    resources_per_trial={"cpu": 2, "gpu": 0.5},
+    resources_per_trial={"cpu": 1, "gpu": 1.0},
     metric="val_loss",
     mode="min",
     config=config,
-    num_samples=1000,
+    num_samples=100,
     name="tune_linevd",
     local_dir=sp,
     keep_checkpoints_num=1,
