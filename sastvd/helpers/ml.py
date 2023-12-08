@@ -34,6 +34,9 @@ def best_f1(true, pos_logits):
         thresh_scores.append([f1, thresh])
     thresh_scores = sorted(thresh_scores, reverse=True)
     thresh_scores = [i for i in thresh_scores if i[0] > 0]
+    if len(thresh_scores) <= 0:
+        print(thresh_scores)
+        return 0
     return thresh_scores[0][-1]
 
 

@@ -4,7 +4,7 @@
 import pickle as pkl
 from collections import defaultdict
 from pathlib import Path
-
+import numpy as np
 import dgl
 import networkx as nx
 import pandas as pd
@@ -18,8 +18,9 @@ import sastvd.ivdetect.treelstm as ivdts
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from dgl.nn import GraphConv
+from dgl.nn.pytorch import GraphConv
 from torch.nn.utils.rnn import pad_sequence
+from torch_geometric.nn import global_mean_pool
 
 # def global_mean_pool(x, batch, size=None):
 #     """Global mean pool (copied)."""
@@ -254,6 +255,7 @@ class IVDetect(nn.Module):
         self.connect = nn.Linear(hidden_size * 3 * 2, hidden_size)
         self.dropout = dropout
         self.h_size = hidden_size
+        self.loss = nn.CrossEntropyLoss()
 
     def forward(self, g, dataset, e_weights=[]):
         """Forward pass.
@@ -274,6 +276,8 @@ class IVDetect(nn.Module):
         ret = model(g, dataset)
 
         """
+        # print("g:", len(g))
+
         # Load data from disk on CPU
         nodes = list(
             zip(
@@ -340,15 +344,17 @@ class IVDetect(nn.Module):
 
         g.ndata["h"] = self.gcn(g, feat_vec)
         batch_pooled = torch.empty(size=(0, 2)).to(self.dev)
-        # for g_i in dgl.unbatch(g):
-        #     conv_output = g_i.ndata["h"]
-        #     pooled = global_mean_pool(
-        #         conv_output,
-        #         torch.tensor(
-        #             np.zeros(shape=(conv_output.shape[0]), dtype=int), device=self.dev
-        #         ),
-        #     )
-        #     batch_pooled = torch.cat([batch_pooled, pooled])
+        for g_i in dgl.unbatch(g):
+            conv_output = g_i.ndata["h"]
+            pooled = global_mean_pool(
+                conv_output,
+                torch.tensor(
+                    np.zeros(shape=(conv_output.shape[0]), dtype=int), device=self.dev
+                ),
+            )
+            batch_pooled = torch.cat([batch_pooled, pooled])
+        # print("result:", len(batch_pooled))
+        # print(batch_pooled)
         return batch_pooled
 
 

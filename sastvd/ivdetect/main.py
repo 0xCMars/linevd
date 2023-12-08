@@ -1,6 +1,4 @@
 """Implementation of IVDetect."""
-
-
 import pickle as pkl
 from importlib import reload
 
@@ -15,16 +13,21 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from dgl.dataloading import GraphDataLoader
+from warnings import filterwarnings
+import torch.nn.functional as F
 
+def filter_warnings():
+    # "The dataloader does not have many workers which may be a bottleneck."
+    filterwarnings("ignore",
+                   category=FutureWarning)
+filter_warnings()
 # Load data
 reload(ivd)
-train_ds = ivd.BigVulDatasetIVDetect(partition="train")
-val_ds = ivd.BigVulDatasetIVDetect(partition="val")
-test_ds = ivd.BigVulDatasetIVDetect(partition="test")
+# train_ds = ivd.BigVulDatasetIVDetect(partition="train")
+# val_ds = ivd.BigVulDatasetIVDetect(partition="val")
 dl_args = {"drop_last": False, "shuffle": True, "num_workers": 6}
-train_dl = GraphDataLoader(train_ds, batch_size=16, **dl_args)
-val_dl = GraphDataLoader(val_ds, batch_size=16, **dl_args)
-test_dl = GraphDataLoader(test_ds, batch_size=64, **dl_args)
+# train_dl = GraphDataLoader(train_ds, batch_size=16, **dl_args)
+# val_dl = GraphDataLoader(val_ds, batch_size=16, **dl_args)
 
 # %% Create model
 dev = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -33,56 +36,62 @@ model = ivd.IVDetect(200, 64)
 model.to(dev)
 
 # Debugging a single sample
-batch = next(iter(train_dl))
-batch = batch.to(dev)
-logits = model(batch, train_ds)
-
-# %% Optimiser
-criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
+# batch = next(iter(train_dl))
+# batch = batch.to(dev)
+# logits = model(batch, train_ds)
+#
+# # %% Optimiser
+# criterion = nn.CrossEntropyLoss()
+# optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
 
 # Train loop
-ID = svd.get_run_id({})
-# ID = "202108121558_79d3273"
+# ID = svd.get_run_id({})
+ID = "202312081151_2903285_line_model"
 logger = ml.LogWriter(
-    model, svd.processed_dir() / "ivdetect" / ID, max_patience=10000, val_every=30
+    model, svd.processed_dir() / "ivdetect" / ID, max_patience=100, val_every=30
 )
 # logger.load_logger()
-while True:
-    for batch in train_dl:
+# while True:
+#     for batch in train_dl:
+#
+#         # Training
+#         model.train()
+#         batch = batch.to(dev)
+#         logits = model(batch, train_ds)
+#         labels = dgl.max_nodes(batch, "_VULN").long()
+#         # print(len(logits))
+#         # print(len(labels))
+#         loss = F.cross_entropy(logits, labels)
+#         optimizer.zero_grad()
+#         loss.backward()
+#         optimizer.step()
+#
+#         # Evaluation
+#         train_mets = ml.get_metrics_logits(labels, logits)
+#         val_mets = train_mets
+#         if logger.log_val():
+#             model.eval()
+#             with torch.no_grad():
+#                 all_pred = torch.empty((0, 2)).long().to(dev)
+#                 all_true = torch.empty((0)).long().to(dev)
+#                 for val_batch in val_dl:
+#                     val_batch = val_batch.to(dev)
+#                     val_labels = dgl.max_nodes(val_batch, "_VULN").long()
+#                     val_logits = model(val_batch, val_ds)
+#                     all_pred = torch.cat([all_pred, val_logits])
+#                     all_true = torch.cat([all_true, val_labels])
+#                 val_mets = ml.get_metrics_logits(all_true, all_pred)
+#         logger.log(train_mets, val_mets)
+#         logger.save_logger()
+#
+#     # Early Stopping
+#     if logger.stop():
+#         break
+#     logger.epoch()
 
-        # Training
-        model.train()
-        batch = batch.to(dev)
-        logits = model(batch, train_ds)
-        labels = dgl.max_nodes(batch, "_VULN").long()
-        loss = F.cross_entropy(logits, labels)
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
 
-        # Evaluation
-        train_mets = ml.get_metrics_logits(labels, logits)
-        val_mets = train_mets
-        if logger.log_val():
-            model.eval()
-            with torch.no_grad():
-                all_pred = torch.empty((0, 2)).long().to(dev)
-                all_true = torch.empty((0)).long().to(dev)
-                for val_batch in val_dl:
-                    val_batch = val_batch.to(dev)
-                    val_labels = dgl.max_nodes(val_batch, "_VULN").long()
-                    val_logits = model(val_batch, val_ds)
-                    all_pred = torch.cat([all_pred, val_logits])
-                    all_true = torch.cat([all_true, val_labels])
-                val_mets = ml.get_metrics_logits(all_true, all_pred)
-        logger.log(train_mets, val_mets)
-        logger.save_logger()
-
-    # Early Stopping
-    if logger.stop():
-        break
-    logger.epoch()
+test_ds = ivd.BigVulDatasetIVDetect(partition="test")
+test_dl = GraphDataLoader(test_ds, batch_size=64, **dl_args)
 
 # Print test results
 logger.load_best_model()
@@ -99,6 +108,11 @@ with torch.no_grad():
         test_mets = ml.get_metrics_logits(all_true, all_pred)
         logger.test(test_mets)
 logger.test(test_mets)
+all_pred = F.softmax(all_pred, dim=1).argmax(1)
+all_pred = all_pred.detach().cpu().numpy()
+all_true = all_true.detach().cpu().numpy()
+print(all_pred)
+print(all_true)
 rank_metr_test = ml.met_dict_to_str(svdr.rank_metr(all_pred, all_true))
 
 # %% Statement-level through GNNExplainer

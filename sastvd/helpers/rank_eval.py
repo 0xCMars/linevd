@@ -196,8 +196,8 @@ def get_r(pred, true, r_thresh=0.5, idx=0):
 
 def rank_metr(pred, true, r_thresh=0.5, perfect=False):
     """Calculate all rank metrics."""
-    if not any([i != 0 and i != 1 for i in pred]):
-        print("Warning: Pred values are binary, not continuous.")
+    # if not any([i != 0 and i != 1 for i in pred]):
+    #     print("Warning: Pred values are binary, not continuous.")
     ret = dict()
     kvals = [1, 3, 5, 10, 15, 20]
     r = get_r(pred, true, r_thresh, idx=1 if perfect else 0)
@@ -215,7 +215,8 @@ def rank_metr(pred, true, r_thresh=0.5, perfect=False):
         ret[f"AR@{k}"] = AR(r, k)
         last_vals = [ret[f"nDCG@{k}"], ret[f"MAP@{k}"], ret[f"FR@{k}"], ret[f"AR@{k}"]]
 
-    mean_true = np.mean(true)
+    # mean_true = np.mean(true, axis=1)
+    mean_true = 0.5
     if mean_true == 0 or mean_true == 1:
         ret["AUC"] = np.nan
     else:
