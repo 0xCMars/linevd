@@ -29,7 +29,7 @@ config = {
 samplesz = -1
 run_id = svd.get_run_id()
 sp = svd.get_dir(svd.processed_dir() / f"raytune_best_{samplesz}" / run_id)
-checkpoint_path="./ts_logger/LitGNN/BigVul/version_6/checkpoints/epoch=117-step=982940-val_loss=0.1041.ckpt"
+checkpoint_path="./ts_logger/LitGNN/BigVul/version_7/checkpoints/epoch=35-step=18756-val_loss=0.6211.ckpt"
 
 def test(
         config, savepath, samplesz=-1, max_epochs=130, num_gpus=1, checkpoint_dir=None

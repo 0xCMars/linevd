@@ -36,7 +36,7 @@ class BigVulDataset:
             # print("vul :", vul.shape)
             # x = self.df[self.df.vul == 0]
             # print("nonvul :", x.shape)
-            # vul = vul.sample(128, random_state=0)
+            vul = vul.sample(1024, random_state=0)
             nonvul = self.df[self.df.vul == 0]
             nonvul = nonvul.sample(min(len(vul), len(nonvul)), random_state=0)
             # print("nonvul :", nonvul.head())
@@ -88,7 +88,7 @@ class BigVulDataset:
         # Load Glove vectors.
         glove_path = svd.processed_dir() / "bigvul/glove_False/vectors.txt"
         self.emb_dict, _ = svdglove.glove_dict(glove_path)
-        print("finish")
+        # print("finish")
 
     def itempath(_id):
         """Get itempath path from item id."""

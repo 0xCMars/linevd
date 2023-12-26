@@ -177,7 +177,8 @@ class BigVulDatasetLineVD(svddc.BigVulDataset):
 
     def cache_items(self, codebert):
         """Cache all items."""
-        for i in tqdm(self.df.sample(len(self.df)).id.tolist()):
+        desc = "cache items:"
+        for i in tqdm(self.df.sample(len(self.df)).id.tolist(), desc=desc):
             try:
                 self.item(i, codebert)
             except Exception as E:
@@ -239,22 +240,23 @@ class BigVulDatasetLineVDDataModule(pl.LightningDataModule):
         # self.val.cache_items(codebert)
         # self.test.cache_items(codebert)
         self.batch_size = batch_size
-        print(self.batch_size)
+        # print(self.batch_size)
         self.nsampling = nsampling
         self.nsampling_hops = nsampling_hops
 
     def node_dl(self, g, shuffle=False):
         """Return node dataloader."""
         sampler = dgl.dataloading.MultiLayerFullNeighborSampler(self.nsampling_hops)
-        print("node_dl:", self.batch_size)
+        # print("node_dl:", self.batch_size)
         return dgl.dataloading.DataLoader(
             g,
             g.nodes(),
             sampler,
+            device="cuda",
             batch_size=self.batch_size,
             shuffle=shuffle,
             drop_last=False,
-            pin_memory=True,
+            # pin_memory=True,
             num_workers=2,
         )
 

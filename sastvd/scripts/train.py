@@ -22,8 +22,8 @@ config = {
     "loss": "ce",
     "scea": 0.5,
     "gtype": "pdg+raw",
-    "batch_size": 64,
-    "multitask": "line",
+    "batch_size": 1024,
+    "multitask": "linemethod",
     "splits": "default",
     "lr": 1e-4,
 }
