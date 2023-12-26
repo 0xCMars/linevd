@@ -1,6 +1,6 @@
 from pytorch_lightning import LightningModule
-from sastvd.VHGLocator.models.modules.gnns import GraphConvEncoder, GatedGraphConvEncoder
-from sastvd.VHGLocator.models.modules.rgcn import RelationConvEncoder
+# from sastvd.VHGLocator.models.modules.gnns import GraphConvEncoder, GatedGraphConvEncoder
+# from sastvd.VHGLocator.models.modules.rgcn import RelationConvEncoder
 from torch.optim import Adam, Adamax
 from torch.nn import CrossEntropyLoss
 from torchmetrics import Accuracy, AUROC, MatthewsCorrCoef
@@ -30,7 +30,6 @@ class VHGLocator(LightningModule):
             loss: str = "ce",
             multitask: str = "linemethod",
             stmtweight: int = 5,
-            gnntype: str = "gat",
             random: bool = False,
             scea: float = 0.7,
     ):
@@ -53,18 +52,19 @@ class VHGLocator(LightningModule):
         self.loss = CrossEntropyLoss(
             weight=torch.Tensor([1, self.hparams.stmtweight]).cuda()
         )
-        self.accuracy = Accuracy()
-        self.auroc = AUROC(compute_on_step=False)
-        self.mcc = MatthewsCorrCoef(2)
+        self.accuracy = Accuracy(task="binary")
+        self.auroc = AUROC(task="binary")
+        self.mcc = MatthewsCorrCoef(task='binary')
 
         hfeat = self.hparams.hfeat
         drop = self.hparams.dropout
         embfeat = self.hparams.embfeat
-        gnn_args = {"out_feats": hfeat}
+        rel_num = 2
+        gnn_args = {"out_feat": hfeat, "num_rels": rel_num}
 
         gnn = RelGraphConv
-        gnn1_args = {"in_feats": embfeat, **gnn_args}
-        gnn2_args = {"in_feats": hfeat, **gnn_args}
+        gnn1_args = {"in_feat": embfeat, **gnn_args}
+        gnn2_args = {"in_feat": hfeat, **gnn_args}
         self.gcl = gnn(**gnn1_args)
         self.gcl2 = gnn(**gnn2_args)
         self.fc = torch.nn.Linear(hfeat, self.hparams.hfeat)
@@ -80,7 +80,11 @@ class VHGLocator(LightningModule):
         self.fc2 = torch.nn.Linear(self.hparams.hfeat, 2)
 
     def forward(self, g, test=False):
-
+        # print(g[0])
+        # print(g[1])
+        # print(len(g[2][0].edata["_ETYPE"]))
+        # print(len(g[2][1].edata["_ETYPE"]))
+        # g[2][-1] 是抽样后的图， g[2][0] 是该批次所有的图
         if self.hparams.nsampling and not test:
             hdst = g[2][-1].dstdata[self.EMBED]
             h_func = g[2][-1].dstdata["_FUNC_EMB"]
@@ -88,6 +92,12 @@ class VHGLocator(LightningModule):
             g = g[2][0]
 
             h = g.srcdata[self.EMBED]
+        else:
+            print("nsampling false")
+            g2 = g
+            h = g.ndata[self.EMBED]
+            h_func = g.ndata["_FUNC_EMB"]
+            hdst = h
 
         if self.random:
             return torch.rand((h.shape[0], 2)).to(self.device), torch.rand(
@@ -97,8 +107,12 @@ class VHGLocator(LightningModule):
         # if self.hparams.embfeat != 768:
         #     h_func = self.codebertfc(h_func)
 
-        h = self.gcl(g, h)
-        h = self.gcl2(g2, h)
+        # print("h size 1:",len(h))
+        # print(g)
+        h = self.gcl(g, h, g.edata["_ETYPE"])
+        # print("h size:",len(h))
+        # print(g2)
+        h = self.gcl2(g2, h, g2.edata["_ETYPE"])
         h = self.mlpdropout(F.elu(self.fc(h)))
         # h_func = self.mlpdropout(F.elu(self.fconly(h_func)))
 
