@@ -116,30 +116,30 @@ print(all_true)
 rank_metr_test = ml.met_dict_to_str(svdr.rank_metr(all_pred, all_true))
 
 # %% Statement-level through GNNExplainer
-correct_lines = ivde.get_dep_add_lines_bigvul()
-pred_lines = dict()
-for batch in test_dl:
-    for g in dgl.unbatch(batch):
-        sampleid = g.ndata["_SAMPLE"].max().int().item()
-        if sampleid not in correct_lines:
-            continue
-        if sampleid in pred_lines:
-            continue
-        try:
-            lines = ge.gnnexplainer(model, g.to(dev), test_ds)
-        except Exception as E:
-            print(E)
-        pred_lines[sampleid] = lines
+# correct_lines = ivde.get_dep_add_lines_bigvul()
+# pred_lines = dict()
+# for batch in test_dl:
+#     for g in dgl.unbatch(batch):
+#         sampleid = g.ndata["_SAMPLE"].max().int().item()
+#         if sampleid not in correct_lines:
+#             continue
+#         if sampleid in pred_lines:
+#             continue
+#         try:
+#             lines = ge.gnnexplainer(model, g.to(dev), test_ds)
+#         except Exception as E:
+#             print(E)
+#         pred_lines[sampleid] = lines
 
-with open(svd.cache_dir() / "pred_lines.pkl", "wb") as f:
-    pkl.dump(pred_lines, f)
-
-MFR = []
-for sampleid, pred in pred_lines.items():
-    true = correct_lines[sampleid]
-    true = list(true["removed"]) + list(true["depadd"])
-    for i, p in enumerate(pred):
-        if p in true:
-            MFR += [i]
-            break
-print(sum(MFR) / len(MFR))
+# with open(svd.cache_dir() / "pred_lines.pkl", "wb") as f:
+#     pkl.dump(pred_lines, f)
+#
+# MFR = []
+# for sampleid, pred in pred_lines.items():
+#     true = correct_lines[sampleid]
+#     true = list(true["removed"]) + list(true["depadd"])
+#     for i, p in enumerate(pred):
+#         if p in true:
+#             MFR += [i]
+#             break
+# print(sum(MFR) / len(MFR))
