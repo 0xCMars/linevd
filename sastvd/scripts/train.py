@@ -2,8 +2,8 @@ from os.path import basename, join
 from pytorch_lightning.loggers import TensorBoardLogger
 import sastvd.linevd as lvd
 import sastvd as svd
-import sastvd.linevd.run as lvdrun
-from ray import tune
+# import sastvd.linevd.run as lvdrun
+# from ray import tune
 from pytorch_lightning import LightningModule, LightningDataModule, Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping, LearningRateMonitor
 from commode_utils.callback import PrintEpochResultCallback, UploadCheckpointCallback

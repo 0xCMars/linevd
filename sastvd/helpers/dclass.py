@@ -36,7 +36,7 @@ class BigVulDataset:
             # print("vul :", vul.shape)
             # x = self.df[self.df.vul == 0]
             # print("nonvul :", x.shape)
-            vul = vul.sample(1024, random_state=0)
+            vul = vul.sample(4096, random_state=0)
             nonvul = self.df[self.df.vul == 0]
             nonvul = nonvul.sample(min(len(vul), len(nonvul)), random_state=0)
             # print("nonvul :", nonvul.head())
@@ -51,8 +51,9 @@ class BigVulDataset:
         # Correct ratio for test set
         if partition == "test":
             vul = self.df[self.df.vul == 1]
+            print("test vul :", vul.shape)
             nonvul = self.df[self.df.vul == 0]
-            nonvul = nonvul.sample(min(len(nonvul), len(vul) * 20), random_state=0)
+            nonvul = nonvul.sample(min(len(nonvul), len(vul)), random_state=0)
             self.df = pd.concat([vul, nonvul])
 
         # print("3",self.df.keys())

@@ -20,7 +20,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from dgl.nn.pytorch import GraphConv
 from torch.nn.utils.rnn import pad_sequence
-from torch_geometric.nn import global_mean_pool
+# from torch_geometric.nn import global_mean_pool
 
 # def global_mean_pool(x, batch, size=None):
 #     """Global mean pool (copied)."""

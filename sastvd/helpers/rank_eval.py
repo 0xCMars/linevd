@@ -215,8 +215,8 @@ def rank_metr(pred, true, r_thresh=0.5, perfect=False):
         ret[f"AR@{k}"] = AR(r, k)
         last_vals = [ret[f"nDCG@{k}"], ret[f"MAP@{k}"], ret[f"FR@{k}"], ret[f"AR@{k}"]]
 
-    # mean_true = np.mean(true, axis=1)
-    mean_true = 0.5
+    mean_true = np.mean(true, axis=0)
+    # mean_true = 0.5
     if mean_true == 0 or mean_true == 1:
         ret["AUC"] = np.nan
     else:
