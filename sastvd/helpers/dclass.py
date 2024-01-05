@@ -53,7 +53,7 @@ class BigVulDataset:
             vul = self.df[self.df.vul == 1]
             print("test vul :", vul.shape)
             nonvul = self.df[self.df.vul == 0]
-            nonvul = nonvul.sample(min(len(nonvul), len(vul)), random_state=0)
+            nonvul = nonvul.sample(min(len(nonvul), len(vul) * 20), random_state=0)
             self.df = pd.concat([vul, nonvul])
 
         # print("3",self.df.keys())

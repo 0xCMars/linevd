@@ -41,16 +41,18 @@ model.to(dev)
 # logits = model(batch, train_ds)
 #
 # # %% Optimiser
-# criterion = nn.CrossEntropyLoss()
-# optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
+criterion = nn.CrossEntropyLoss()
+optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
 
 # Train loop
 # ID = svd.get_run_id({})
 ID = "202312081151_2903285_line_model"
+# ID = "202401041707_f1c089f_use_the_new_model_to_test"
+
 logger = ml.LogWriter(
     model, svd.processed_dir() / "ivdetect" / ID, max_patience=100, val_every=30
 )
-# logger.load_logger()
+logger.load_logger()
 # while True:
 #     for batch in train_dl:
 #
