@@ -33,7 +33,7 @@ config = {
     "scea": 0.5,
     "gtype": "rel+raw",
     "batch_size": 256,
-    "multitask": "linemethod",
+    "multitask": "line",
     "splits": "default",
     "lr": 1e-4,
 }
@@ -71,6 +71,11 @@ def train(
     lr_logger = LearningRateMonitor("step")
     print_epoch_results = PrintEpochResultCallback(split_symbol="_",
                                                    after_test=False)
+    early_stopping_callback = EarlyStopping(patience=50,
+                                            monitor="val_loss",
+                                            verbose=True,
+                                            mode="min")
+
     gpu = 1 if torch.cuda.is_available() else None
     print("gpu", gpu)
     data_module = lvd.BigVulDatasetLineVDDataModule(
@@ -94,7 +99,7 @@ def train(
         log_every_n_steps=10,
         logger=[tensorlogger],
         callbacks=[
-            checkpoint_callback, lr_logger,
+            checkpoint_callback, lr_logger, early_stopping_callback,
             print_epoch_results, upload_weights
         ],
     )

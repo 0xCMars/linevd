@@ -32,13 +32,25 @@ config = {
     "scea": 0.5,
     "gtype": "rel+raw",
     "batch_size": 256,
-    "multitask": "linemethod",
+    "multitask": "line",
     "splits": "default",
     "lr": 1e-4,
 }
 
 sp = svd.get_dir(svd.processed_dir() / f"raytune_best_VHG")
-checkpoint_path="./sastvd/VHGLocator/ts_logger/VHGLocator/BigVul/version_26/checkpoints/epoch=31-step=4960-val_loss=0.1517.ckpt"
+# codebert rel + raw linemethod
+# checkpoint_path="./sastvd/VHGLocator/ts_logger/VHGLocator/BigVul/version_26/checkpoints/epoch=31-step=4960-val_loss=0.1517.ckpt"
+
+# doc2vec rel + raw linemethod
+# checkpoint_path="./sastvd/VHGLocator/ts_logger/VHGLocator/BigVul/version_28/checkpoints/epoch=09-step=12320-val_loss=0.1294.ckpt"
+# 202401051910_f029eca_modify_dclass_and_sastvd_scripts.csv
+
+# codebert pdg + raw line
+# checkpoint_path="./sastvd/VHGLocator/ts_logger/VHGLocator/BigVul/version_29/checkpoints/epoch=25-step=31772-val_loss=0.3680.ckpt"
+# 202401052050_f029eca_modify_dclass_and_sastvd_scripts.csv
+
+# codebert rel+raw line
+checkpoint_path="./sastvd/VHGLocator/ts_logger/VHGLocator/BigVul/version_30/checkpoints/epoch=85-step=105952-val_loss=0.1086.ckpt"
 
 def test(
         config, savepath, samplesz=-1, max_epochs=130, num_gpus=1, checkpoint_dir=None
