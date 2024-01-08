@@ -5,7 +5,7 @@ from torch.optim import Adam, Adamax
 from torch.nn import CrossEntropyLoss
 from torchmetrics import Accuracy, AUROC, MatthewsCorrCoef
 import torch
-from dgl.nn.pytorch import RelGraphConv
+from dgl.nn.pytorch import RelGraphConv, HGTConv
 import torch.nn.functional as F
 import dgl
 import sastvd.helpers.ml as ml
@@ -60,14 +60,17 @@ class VHGLocator(LightningModule):
         drop = self.hparams.dropout
         embfeat = self.hparams.embfeat
         rel_num = 2
-        gnn_args = {"out_feat": hfeat, "num_rels": rel_num}
+        num_ntype = 2
+        num_heads = 3
+        gnn_args = {"head_size": hfeat, "num_heads": num_heads, "num_ntypes":num_ntype, "num_etypes": rel_num}
 
-        gnn = RelGraphConv
-        gnn1_args = {"in_feat": embfeat, **gnn_args}
-        gnn2_args = {"in_feat": hfeat, **gnn_args}
+        # gnn = RelGraphConv
+        gnn = HGTConv
+        gnn1_args = {"in_size": embfeat, **gnn_args}
+        gnn2_args = {"in_size": hfeat * num_heads, **gnn_args}
         self.gcl = gnn(**gnn1_args)
         self.gcl2 = gnn(**gnn2_args)
-        self.fc = torch.nn.Linear(hfeat, self.hparams.hfeat)
+        self.fc = torch.nn.Linear(hfeat * num_heads, self.hparams.hfeat)
         self.fconly = torch.nn.Linear(embfeat, self.hparams.hfeat)
         self.mlpdropout = torch.nn.Dropout(self.hparams.mlpdropout)
 
@@ -88,12 +91,15 @@ class VHGLocator(LightningModule):
         if self.hparams.nsampling and not test:
             hdst = g[2][-1].dstdata[self.EMBED]
             h_func = g[2][-1].dstdata["_FUNC_EMB"]
+            # g3 = g[2][2]
             g2 = g[2][1]
             g = g[2][0]
 
             h = g.srcdata[self.EMBED]
         else:
             print("nsampling false")
+            # g3 = g
+            # g = g[2][0]
             g2 = g
             h = g.ndata[self.EMBED]
             h_func = g.ndata["_FUNC_EMB"]
@@ -108,11 +114,21 @@ class VHGLocator(LightningModule):
         #     h_func = self.codebertfc(h_func)
 
         # print("h size 1:",len(h))
-        # print(g)
-        h = self.gcl(g, h, g.edata["_ETYPE"])
+        # print("type is: ",type(g.ndata["_NTYPE"]))
+        # print(g.ndata["_NTYPE"])
+        # print(type(g.edata["_ETYPE"]))
+        # print(g.edata["_ETYPE"])
+
+        if not test:
+            h = self.gcl(g, h, g.ndata["_NTYPE"]["_N"], g.edata["_ETYPE"])
         # print("h size:",len(h))
         # print(g2)
-        h = self.gcl2(g2, h, g2.edata["_ETYPE"])
+            h = self.gcl2(g2, h, g2.ndata["_NTYPE"]["_N"], g2.edata["_ETYPE"])
+        # h = self.gcl2(g3, h, g3.edata["_ETYPE"])
+        else:
+            h = self.gcl(g, h, g.ndata["_NTYPE"], g.edata["_ETYPE"])
+            h = self.gcl2(g2, h, g2.ndata["_NTYPE"], g2.edata["_ETYPE"])
+
         h = self.mlpdropout(F.elu(self.fc(h)))
         # h_func = self.mlpdropout(F.elu(self.fconly(h_func)))
 

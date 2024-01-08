@@ -32,7 +32,7 @@ config = {
     "loss": "ce",
     "scea": 0.5,
     "gtype": "rel+raw",
-    "batch_size": 256,
+    "batch_size": 64,
     "multitask": "line",
     "splits": "default",
     "lr": 1e-4,
@@ -71,7 +71,7 @@ def train(
     lr_logger = LearningRateMonitor("step")
     print_epoch_results = PrintEpochResultCallback(split_symbol="_",
                                                    after_test=False)
-    early_stopping_callback = EarlyStopping(patience=50,
+    early_stopping_callback = EarlyStopping(patience=20,
                                             monitor="val_loss",
                                             verbose=True,
                                             mode="min")

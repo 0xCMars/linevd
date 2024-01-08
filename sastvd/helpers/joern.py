@@ -298,7 +298,7 @@ def rdg(edges, gtype):
             (edges.etype == "REACHING_DEF")
             | (edges.etype == "CDG")
             | (edges.etype == "AST")
-            | (edges.etype == "EVAL_TYPE")
+            | (edges.etype == "CFG")
             | (edges.etype == "REF")
         ]
 

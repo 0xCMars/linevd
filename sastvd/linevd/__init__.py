@@ -157,6 +157,8 @@ class BigVulDatasetLineVD(svddc.BigVulDataset):
         g.ndata["_RANDFEAT"] = th.rand(size=(g.number_of_nodes(), 100))
         g.ndata["_LINE"] = th.Tensor(lineno).int()
         g.ndata["_VULN"] = th.Tensor(vuln).float()
+        node_type = [1 for i in lineno]
+        g.ndata["_NTYPE"] = th.Tensor(node_type).long()
 
         # Get SAST labels
         s = sast.get_sast_lines(svd.processed_dir() / f"bigvul/before/{_id}.c.sast.pkl")
@@ -169,6 +171,7 @@ class BigVulDatasetLineVD(svddc.BigVulDataset):
 
         g.ndata["_FVULN"] = g.ndata["_VULN"].max().repeat((g.number_of_nodes()))
         g.edata["_ETYPE"] = th.Tensor(et).long()
+
         emb_path = svd.cache_dir() / f"codebert_method_level/{_id}.pt"
         g.ndata["_FUNC_EMB"] = th.load(emb_path).repeat((g.number_of_nodes(), 1))
         g = dgl.add_self_loop(g)

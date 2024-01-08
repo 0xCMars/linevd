@@ -50,7 +50,22 @@ sp = svd.get_dir(svd.processed_dir() / f"raytune_best_VHG")
 # 202401052050_f029eca_modify_dclass_and_sastvd_scripts.csv
 
 # codebert rel+raw line
-checkpoint_path="./sastvd/VHGLocator/ts_logger/VHGLocator/BigVul/version_30/checkpoints/epoch=85-step=105952-val_loss=0.1086.ckpt"
+# checkpoint_path="./sastvd/VHGLocator/ts_logger/VHGLocator/BigVul/version_30/checkpoints/epoch=85-step=105952-val_loss=0.1086.ckpt"
+
+# codebert all+raw line
+# checkpoint_path="./sastvd/VHGLocator/ts_logger/VHGLocator/BigVul/version_31/checkpoints/epoch=29-step=41340-val_loss=0.3320.ckpt"
+
+# codebert rel+raw linemethod 3layer
+# checkpoint_path="./sastvd/VHGLocator/ts_logger/VHGLocator/BigVul/version_36/checkpoints/epoch=103-step=128128-val_loss=0.1132.ckpt"
+
+# codebert rel+raw line 3layer
+# checkpoint_path="./sastvd/VHGLocator/ts_logger/VHGLocator/BigVul/version_37/checkpoints/epoch=55-step=68992-val_loss=0.1129.ckpt"
+
+# codebert rel+raw line 2layer HGTConv vuln节点
+# checkpoint_path="./sastvd/VHGLocator/ts_logger/VHGLocator/BigVul/version_58/checkpoints/epoch=07-step=39416-val_loss=0.0000.ckpt"
+
+# codebert rel+raw line 2layer HGTConv all 1 202401090024_c213214_train_new_model.csv
+checkpoint_path="./sastvd/VHGLocator/ts_logger/VHGLocator/BigVul/version_63/checkpoints/epoch=29-step=147810-val_loss=0.3769.ckpt"
 
 def test(
         config, savepath, samplesz=-1, max_epochs=130, num_gpus=1, checkpoint_dir=None
@@ -67,11 +82,11 @@ def test(
         sample=samplesz,
         methodlevel=False,
         nsampling=True,
-        nsampling_hops=2,
+        nsampling_hops=3,
         gtype=config["gtype"],
         splits=config["splits"],
     )
-    trainer = Trainer(devices=gpu)
+    trainer = Trainer(accelerator="gpu", devices=1)
     trainer.test(model, datamodule=data_module)
     # print("model:", model.res2)
     res = [
