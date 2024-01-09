@@ -61,7 +61,7 @@ def get_metrics(true, pred):
 
 def get_metrics_logits(true, logits):
     """Call get_metrics with logits."""
-    loss = F.cross_entropy(logits, true).detach().cpu().item()
+    loss = F.cross_entropy(logits, true)
     if torch.is_tensor(true):
         true_oh = torch.nn.functional.one_hot(true).detach().cpu().numpy()
         true = true.detach().cpu().numpy()

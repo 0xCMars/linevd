@@ -21,6 +21,7 @@ import torch.nn.functional as F
 from dgl.nn.pytorch import GraphConv
 from torch.nn.utils.rnn import pad_sequence
 from torch_geometric.nn import global_mean_pool
+import sastvd.ivdetect.evaluate as ivde
 
 # def global_mean_pool(x, batch, size=None):
 #     """Global mean pool (copied)."""
@@ -55,7 +56,8 @@ def feature_extraction(filepath):
     cachefp = svd.get_dir(svd.cache_dir() / "ivdetect_feat_ext") / Path(cache_name).stem
     try:
         with open(cachefp, "rb") as f:
-            return pkl.load(f)
+            res = pkl.load(f)
+            return res
     except:
         pass
 
@@ -277,6 +279,7 @@ class IVDetect(nn.Module):
 
         """
         # print("g:", len(g))
+        # print("g ndata:", g.ndata.shape)
 
         # Load data from disk on CPU
         nodes = list(
@@ -298,6 +301,7 @@ class IVDetect(nn.Module):
         feat = defaultdict(list)
         for n in nodes:
             f1 = torch.Tensor(data[n]["subseq"])
+            # print("f1", f1)
             f1 = f1 if f1.shape[0] > 0 else torch.zeros(1, 200)
             f1_lens = len(f1)
             feat["f1"].append(f1)
@@ -343,19 +347,19 @@ class IVDetect(nn.Module):
         feat_vec = self.connect(feat_vec)
 
         g.ndata["h"] = self.gcn(g, feat_vec)
-        batch_pooled = torch.empty(size=(0, 2)).to(self.dev)
-        for g_i in dgl.unbatch(g):
-            conv_output = g_i.ndata["h"]
-            pooled = global_mean_pool(
-                conv_output,
-                torch.tensor(
-                    np.zeros(shape=(conv_output.shape[0]), dtype=int), device=self.dev
-                ),
-            )
-            batch_pooled = torch.cat([batch_pooled, pooled])
+        # batch_pooled = torch.empty(size=(0, 2)).to(self.dev)
+        # for g_i in dgl.unbatch(g):
+        #     conv_output = g_i.ndata["h"]
+        #     pooled = global_mean_pool(
+        #         conv_output,
+        #         torch.tensor(
+        #             np.zeros(shape=(conv_output.shape[0]), dtype=int), device=self.dev
+        #         ),
+        #     )
+        #     batch_pooled = torch.cat([batch_pooled, pooled])
         # print("result:", len(batch_pooled))
         # print(batch_pooled)
-        return batch_pooled
+        return g.ndata["h"]
 
 
 class BigVulDatasetIVDetect(svddc.BigVulDataset):
@@ -365,6 +369,9 @@ class BigVulDatasetIVDetect(svddc.BigVulDataset):
         """Init."""
         super(BigVulDatasetIVDetect, self).__init__(**kwargs)
         glove_path = svd.processed_dir() / "bigvul/glove_False/vectors.txt"
+        lines = ivde.get_dep_add_lines_bigvul()
+        lines = {k: set(list(v["removed"]) + v["depadd"]) for k, v in lines.items()}
+        self.lines = lines
         self.emb_dict, _ = svdg.glove_dict(glove_path)
 
     def item(self, _id):
@@ -412,6 +419,12 @@ class BigVulDatasetIVDetect(svddc.BigVulDataset):
         """Override getitem."""
         _id = self.idx2id[idx]
         n, e = feature_extraction(svddc.BigVulDataset.itempath(_id))
+
+        # if _id in self.lines:
+        #     vuln = [1 if i in self.lines[_id] else 0 for i in lineno]
+        # else:
+        #     vuln = [0 for _ in lineno]
+
         n["vuln"] = n.id.map(self.get_vuln_indices(_id)).fillna(0)
         g = dgl.graph(e)
         g.ndata["_LINE"] = torch.Tensor(n["id"].astype(int).to_numpy())

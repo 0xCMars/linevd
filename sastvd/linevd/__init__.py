@@ -406,7 +406,7 @@ class LitGNN(pl.LightningModule):
 
     def forward(self, g, test=False, e_weights=[], feat_override=""):
         """Forward pass.
-
+gcn
         data = BigVulDatasetLineVDDataModule(batch_size=1, sample=2, nsampling=True)
         g = next(iter(data.train_dataloader()))
 
