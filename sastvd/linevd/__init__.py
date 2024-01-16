@@ -269,11 +269,11 @@ class BigVulDatasetLineVDDataModule(pl.LightningDataModule):
         train = BigVulDatasetLineVD(partition="train", **self.dataargs)
         train.cache_codebert_method_level(self.codebert)
         train.cache_items(self.codebert)
-        print(len(train))
+        # print(len(train))
         if self.nsampling:
             g = next(iter(GraphDataLoader(train, batch_size=len(train))))
             return self.node_dl(g, shuffle=True)
-        return GraphDataLoader(self.train, shuffle=True, batch_size=self.batch_size)
+        return GraphDataLoader(train, shuffle=True, batch_size=self.batch_size)
 
     def val_dataloader(self):
         """Return val dataloader."""
@@ -284,11 +284,11 @@ class BigVulDatasetLineVDDataModule(pl.LightningDataModule):
         if self.nsampling:
             g = next(iter(GraphDataLoader(val, batch_size=len(val))))
             return self.node_dl(g)
-        return GraphDataLoader(self.val, pin_memory=True, batch_size=self.batch_size)
+        return GraphDataLoader(val, pin_memory=True, batch_size=self.batch_size)
 
     def val_graph_dataloader(self):
         """Return test dataloader."""
-        print("BigVulDatasetLineVDDataModule val")
+        # print("BigVulDatasetLineVDDataModule val")
         val = BigVulDatasetLineVD(partition="val", **self.dataargs)
         val.cache_codebert_method_level(self.codebert)
         val.cache_items(self.codebert)

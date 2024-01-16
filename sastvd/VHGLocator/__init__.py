@@ -62,19 +62,27 @@ class VHGLocator(LightningModule):
         rel_num = 2
         num_ntype = 2
         num_heads = 3
-        gnn_args = {"head_size": hfeat, "num_heads": num_heads, "num_ntypes":num_ntype, "num_etypes": rel_num}
 
+        # gnn_args = {"out_feat": hfeat, "num_rels": rel_num}
         # gnn = RelGraphConv
+        # gnn1_args = {"in_feat": embfeat, **gnn_args}
+        # gnn2_args = {"in_feat": hfeat, **gnn_args}
+
+        gnn_args = {"head_size": hfeat, "num_heads": num_heads, "num_ntypes":num_ntype, "num_etypes": rel_num}
         gnn = HGTConv
         gnn1_args = {"in_size": embfeat, **gnn_args}
         gnn2_args = {"in_size": hfeat * num_heads, **gnn_args}
+        # gnn2_args = {"in_feat": hfeat, **gnn_args}
+
         self.gcl = gnn(**gnn1_args)
         self.gcl2 = gnn(**gnn2_args)
         self.fc = torch.nn.Linear(hfeat * num_heads, self.hparams.hfeat)
-        self.fconly = torch.nn.Linear(embfeat, self.hparams.hfeat)
+        # self.fc = torch.nn.Linear(hfeat, self.hparams.hfeat)
+
+        # self.fconly = torch.nn.Linear(embfeat, self.hparams.hfeat)
         self.mlpdropout = torch.nn.Dropout(self.hparams.mlpdropout)
 
-        self.codebertfc = torch.nn.Linear(768, self.hparams.hfeat)
+        # self.codebertfc = torch.nn.Linear(768, self.hparams.hfeat)
         self.fch = []
         for _ in range(8):
             self.fch.append(torch.nn.Linear(self.hparams.hfeat, self.hparams.hfeat))
@@ -97,7 +105,7 @@ class VHGLocator(LightningModule):
 
             h = g.srcdata[self.EMBED]
         else:
-            print("nsampling false")
+            # print("nsampling false")
             # g3 = g
             # g = g[2][0]
             g2 = g
@@ -120,14 +128,22 @@ class VHGLocator(LightningModule):
         # print(g.edata["_ETYPE"])
 
         if not test:
-            h = self.gcl(g, h, g.ndata["_NTYPE"]["_N"], g.edata["_ETYPE"])
-        # print("h size:",len(h))
-        # print(g2)
-            h = self.gcl2(g2, h, g2.ndata["_NTYPE"]["_N"], g2.edata["_ETYPE"])
+            h = self.gcl(g, h, g.ndata["_NTYPE"], g.edata["_ETYPE"])
+            # print("h size:",len(h))
+        # # print(g2)
+            h = self.gcl2(g2, h, g2.ndata["_NTYPE"], g2.edata["_ETYPE"])
+            # h = self.gcl2(g3, h, g3.ndata["_NTYPE"]["_N"], g3.edata["_ETYPE"])
         # h = self.gcl2(g3, h, g3.edata["_ETYPE"])
+
+        # RGCN
+        #     h = self.gcl(g, h, g.edata["_ETYPE"])
+        #     h = self.gcl2(g2, h, g2.edata["_ETYPE"])
         else:
             h = self.gcl(g, h, g.ndata["_NTYPE"], g.edata["_ETYPE"])
             h = self.gcl2(g2, h, g2.ndata["_NTYPE"], g2.edata["_ETYPE"])
+            # RGCN
+            # h = self.gcl(g, h, g.edata["_ETYPE"])
+            # h = self.gcl2(g2, h, g2.edata["_ETYPE"])
 
         h = self.mlpdropout(F.elu(self.fc(h)))
         # h_func = self.mlpdropout(F.elu(self.fconly(h_func)))
@@ -160,9 +176,9 @@ class VHGLocator(LightningModule):
         acc = self.accuracy(pred.argmax(1), labels)
         mcc = self.mcc(pred.argmax(1), labels)
 
-        self.log("train_loss", loss, on_epoch=True, prog_bar=True, logger=True)
-        self.log("train_acc", acc, prog_bar=True, logger=True)
-        self.log("train_mcc", mcc, prog_bar=True, logger=True)
+        self.log("train_loss", loss, on_epoch=True, prog_bar=True, logger=True, batch_size=batch.batch_size)
+        self.log("train_acc", acc, prog_bar=True, logger=True, batch_size=batch.batch_size)
+        self.log("train_mcc", mcc, prog_bar=True, logger=True, batch_size=batch.batch_size)
 
         return loss
 
@@ -173,11 +189,11 @@ class VHGLocator(LightningModule):
         acc = self.accuracy(pred.argmax(1), labels)
         mcc = self.mcc(pred.argmax(1), labels)
 
-        self.log("val_loss", loss, on_step=True, prog_bar=True, logger=True)
+        self.log("val_loss", loss, on_step=True, prog_bar=True, logger=True, batch_size=batch.batch_size)
         self.auroc.update(logit[:, 1], labels)
-        self.log("val_auroc", self.auroc, prog_bar=True, logger=True)
-        self.log("val_acc", acc, prog_bar=True, logger=True)
-        self.log("val_mcc", mcc, prog_bar=True, logger=True)
+        self.log("val_auroc", self.auroc, prog_bar=True, logger=True, batch_size=batch.batch_size)
+        self.log("val_acc", acc, prog_bar=True, logger=True, batch_size=batch.batch_size)
+        self.log("val_mcc", mcc, prog_bar=True, logger=True, batch_size=batch.batch_size)
         return loss
 
     def test_step(self, batch, batch_idx):

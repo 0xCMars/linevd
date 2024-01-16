@@ -36,7 +36,7 @@ class BigVulDataset:
             # print("vul :", vul.shape)
             # x = self.df[self.df.vul == 0]
             # print("nonvul :", x.shape)
-            vul = vul.sample(4096, random_state=0)
+            vul = vul.sample(2048, random_state=0)
             nonvul = self.df[self.df.vul == 0]
             nonvul = nonvul.sample(min(len(vul), len(nonvul)), random_state=0)
             # print("nonvul :", nonvul.head())
