@@ -65,7 +65,22 @@ sp = svd.get_dir(svd.processed_dir() / f"raytune_best_VHG")
 # checkpoint_path="./sastvd/VHGLocator/ts_logger/VHGLocator/BigVul/version_58/checkpoints/epoch=07-step=39416-val_loss=0.0000.ckpt"
 
 # codebert rel+raw line 2layer HGTConv all 1 202401090024_c213214_train_new_model.csv
-checkpoint_path="./sastvd/VHGLocator/ts_logger/VHGLocator/BigVul/version_63/checkpoints/epoch=29-step=147810-val_loss=0.3769.ckpt"
+# checkpoint_path="./sastvd/VHGLocator/ts_logger/VHGLocator/BigVul/version_63/checkpoints/epoch=29-step=147810-val_loss=0.3769.ckpt"
+
+# codebert rel+raw line rgcn no sampling best
+# checkpoint_path = "./ts_logger/VHGLocator/BigVul/version_10/checkpoints/epoch=21-step=11088-val_loss=0.3409.ckpt"
+# checkpoint_path = "./ts_logger/VHGLocator/BigVul/version_11/checkpoints/epoch=115-step=58464-val_loss=0.3209.ckpt"
+# checkpoint_path = "./ts_logger/VHGLocator/BigVul/version_12/checkpoints/epoch=221-step=111888-val_loss=0.3152.ckpt"
+
+# codebert cfgcdg+raw line hgat no sampling
+# checkpoint_path = "./ts_logger/VHGLocator/BigVul/version_13/checkpoints/epoch=127-step=32256-val_loss=0.3372.ckpt"
+
+# codebert pdg+raw line hgat no sampling
+# checkpoint_path = "./ts_logger/VHGLocator/BigVul/version_17/checkpoints/epoch=19-step=5040-val_loss=0.3478.ckpt"
+# checkpoint_path = "./ts_logger/VHGLocator/BigVul/version_19/checkpoints/epoch=75-step=19152-val_loss=0.3474.ckpt"
+
+# codebert rel+raw line hgat no sampling
+checkpoint_path = "./ts_logger/VHGLocator/BigVul/version_20/checkpoints/epoch=27-step=7056-val_loss=0.3388.ckpt"
 
 def test(
         config, savepath, samplesz=-1, max_epochs=130, num_gpus=1, checkpoint_dir=None
@@ -82,7 +97,7 @@ def test(
         sample=samplesz,
         methodlevel=False,
         nsampling=True,
-        nsampling_hops=3,
+        nsampling_hops=2,
         gtype=config["gtype"],
         splits=config["splits"],
     )

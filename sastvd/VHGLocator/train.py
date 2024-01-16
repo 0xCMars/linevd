@@ -32,7 +32,7 @@ config = {
     "loss": "ce",
     "scea": 0.5,
     "gtype": "rel+raw",
-    "batch_size": 64,
+    "batch_size": 16,
     "multitask": "line",
     "splits": "default",
     "lr": 1e-4,
@@ -41,18 +41,19 @@ config = {
 sp = svd.get_dir(svd.processed_dir() / f"raytune_best_VHG")
 
 def train(
-        config, savepath, samplesz=-1, max_epochs=130
+        config, savepath, samplesz=-1, max_epochs=500
 ):
     model = vhg.VHGLocator(
         hfeat=config["hfeat"],
         embtype=config["embtype"],
-        nsampling=True,
+        nsampling=False,
         model=config["modeltype"],
         loss=config["loss"],
         hdropout=config["hdropout"],
         stmtweight=config["stmtweight"],
         scea=config["scea"],
         lr=config["lr"],
+
     )
 
     model_name = model.__class__.__name__
@@ -71,7 +72,7 @@ def train(
     lr_logger = LearningRateMonitor("step")
     print_epoch_results = PrintEpochResultCallback(split_symbol="_",
                                                    after_test=False)
-    early_stopping_callback = EarlyStopping(patience=20,
+    early_stopping_callback = EarlyStopping(patience=80,
                                             monitor="val_loss",
                                             verbose=True,
                                             mode="min")
@@ -82,7 +83,7 @@ def train(
         batch_size=config["batch_size"],
         sample=samplesz,
         methodlevel=False,
-        nsampling=True,
+        nsampling=False,
         nsampling_hops=2,
         gtype=config["gtype"],
         splits=config["splits"],
