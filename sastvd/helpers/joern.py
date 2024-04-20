@@ -119,6 +119,7 @@ def get_node_edges(filepath: str, verbose=0):
             nodes = nodes[
                 ["id", "_label", "name", "code", "lineNumber", "controlStructureType"]
             ]
+
         except Exception as E:
             if verbose > 1:
                 svd.debug(f"Failed {filepath}: {E}")

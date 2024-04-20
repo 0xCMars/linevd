@@ -52,9 +52,11 @@ class VHGLocator(LightningModule):
         self.loss = CrossEntropyLoss(
             weight=torch.Tensor([1, self.hparams.stmtweight]).cuda()
         )
-        self.accuracy = Accuracy(task="binary")
-        self.auroc = AUROC(task="binary")
-        self.mcc = MatthewsCorrCoef(task='binary')
+        self.accuracy = Accuracy()
+        self.auroc = AUROC()
+        self.mcc = MatthewsCorrCoef(2)
+        self.predict_res = []
+        self.predict_lab = []
 
         hfeat = self.hparams.hfeat
         drop = self.hparams.dropout
@@ -109,6 +111,7 @@ class VHGLocator(LightningModule):
             # g3 = g
             # g = g[2][0]
             g2 = g
+
             h = g.ndata[self.EMBED]
             h_func = g.ndata["_FUNC_EMB"]
             hdst = h
@@ -217,6 +220,7 @@ class VHGLocator(LightningModule):
 
     def test_epoch_end(self, outputs):
         all_pred = torch.empty((0, 2)).long().cuda()
+
         all_true = torch.empty((0)).long().cuda()
         all_funcs = []
 
@@ -226,36 +230,38 @@ class VHGLocator(LightningModule):
         for out in outputs:
             # logits[0]
             all_pred = torch.cat([all_pred, out[0].cuda()])
+            self.predict_res.append(F.softmax(all_pred, dim=1))
             # label
             all_true = torch.cat([all_true, out[1].cuda()])
             all_funcs += out[2]
+            self.predict_lab.append(out[2])
         all_pred = F.softmax(all_pred, dim=1)
         self.all_funcs = all_funcs
         self.all_true = all_true
         self.all_pred = all_pred
-
+        # self.predict_lab.append(all_funcs)
         # Custom ranked accuracy (inc negatives)
-        self.res1 = ivde.eval_statements_list(all_funcs)
-        # Custom ranked accuracy (only positives)
-        self.res1vo = ivde.eval_statements_list(all_funcs, vo=True, thresh=0)
-
-        # Regular metrics
-        self.res2 = ml.get_metrics_logits(all_true, all_pred)
-
-        # Ranked metrics
-        rank_metrs = []
-        rank_metrs_vo = []
-        for af in all_funcs:
-            rank_metr_calc = svdr.rank_metr([i[1] for i in af[0]], af[1], 0)
-            if max(af[1]) > 0:
-                rank_metrs_vo.append(rank_metr_calc)
-            rank_metrs.append(rank_metr_calc)
-        try:
-            self.res3 = ml.dict_mean(rank_metrs)
-        except Exception as E:
-            print(E)
-            pass
-        self.res3vo = ml.dict_mean(rank_metrs_vo)
+        # self.res1 = ivde.eval_statements_list(all_funcs)
+        # # Custom ranked accuracy (only positives)
+        # self.res1vo = ivde.eval_statements_list(all_funcs, vo=True, thresh=0)
+        #
+        # # Regular metrics
+        # self.res2 = ml.get_metrics_logits(all_true, all_pred)
+        #
+        # # Ranked metrics
+        # rank_metrs = []
+        # rank_metrs_vo = []
+        # for af in all_funcs:
+        #     rank_metr_calc = svdr.rank_metr([i[1] for i in af[0]], af[1], 0)
+        #     if max(af[1]) > 0:
+        #         rank_metrs_vo.append(rank_metr_calc)
+        #     rank_metrs.append(rank_metr_calc)
+        # try:
+        #     self.res3 = ml.dict_mean(rank_metrs)
+        # except Exception as E:
+        #     print(E)
+        #     pass
+        # self.res3vo = ml.dict_mean(rank_metrs_vo)
 
         return
 

@@ -53,7 +53,6 @@ def train(
         stmtweight=config["stmtweight"],
         scea=config["scea"],
         lr=config["lr"],
-
     )
 
     model_name = model.__class__.__name__

@@ -114,7 +114,7 @@ def test(
         model.res2,
         model.lr,
     ]
-    main_savedir = svd.get_dir(svd.outputs_dir() / "rq_results_VHGLocator")
+    main_savedir = svd.get_dir(svd.outputs_dir() / "rq_results_VHGLocator_test")
     print(model.res2)
     mets = lvd.get_relevant_metrics(res)
     res_df = pd.DataFrame.from_records([mets])

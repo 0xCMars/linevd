@@ -6,9 +6,9 @@ import pandas as pd
 import sastvd as svd
 import sastvd.helpers.datasets as svdds
 import sastvd.helpers.glove as svdglove
+import sastvd.VHGLocator.helpers.datasets as dshelper
 
-
-class BigVulDataset:
+class InputDatsset:
     """Represent BigVul as graph dataset."""
 
     def __init__(self, partition="train", vulonly=False, sample=-1, splits="default"):
@@ -16,62 +16,62 @@ class BigVulDataset:
         # Get finished samples
         self.finished = [
             int(Path(i).name.split(".")[0])
-            for i in glob(str(svd.processed_dir() / "bigvul/before/*nodes*"))
+            for i in glob(str(svd.processed_dir() / "test_case/before/*nodes*"))
         ]
         # print(len(self.finished))
-        self.df = svdds.bigvul(splits=splits)
+        self.df = dshelper.InputData(splits=splits)
         # print("1",self.df.keys())
         # print(self.df.tail(5))
 
         self.partition = partition
-        self.df = self.df[self.df.label == partition]
-        self.df = self.df[self.df.id.isin(self.finished)]
+        # self.df = self.df[self.df.label == partition]
+        # self.df = self.df[self.df.id.isin(self.finished)]
         # print("2",self.df.keys())
         # print(self.df.tail(5))
 
-        # Balance training set
-        if partition == "train":
-            # print(self.df["vul"].head(100))
-            vul = self.df[self.df.vul == 1]
-            # print("vul :", vul.shape)
-            # x = self.df[self.df.vul == 0]
-            # print("nonvul :", x.shape)
-            vul = vul.sample(2048, random_state=0)
-            nonvul = self.df[self.df.vul == 0]
-            nonvul = nonvul.sample(min(len(vul), len(nonvul)), random_state=0)
-            # print("nonvul :", nonvul.head())
-            self.df = pd.concat([vul, nonvul])
-        if partition == "val":
-            # vul = self.df[self.df.vul == 1].sample(128, random_state=0)
-            vul = self.df[self.df.vul == 1]
-            nonvul = self.df[self.df.vul == 0]
-            nonvul = nonvul.sample(min(len(vul), len(nonvul)), random_state=0)
-            self.df = pd.concat([vul, nonvul])
-
-        # Correct ratio for test set
-        if partition == "test":
-            vul = self.df[self.df.vul == 1]
-            nonvul = self.df[self.df.vul == 0]
-            # nonvul = nonvul.sample(min(len(nonvul), len(vul) * 20), random_state=0)
-            nonvul = nonvul.sample(1024, random_state=0)
-            self.df = pd.concat([vul, nonvul])
+        # # Balance training set
+        # if partition == "train":
+        #     # print(self.df["vul"].head(100))
+        #     vul = self.df[self.df.vul == 1]
+        #     # print("vul :", vul.shape)
+        #     # x = self.df[self.df.vul == 0]
+        #     # print("nonvul :", x.shape)
+        #     vul = vul.sample(2048, random_state=0)
+        #     nonvul = self.df[self.df.vul == 0]
+        #     nonvul = nonvul.sample(min(len(vul), len(nonvul)), random_state=0)
+        #     # print("nonvul :", nonvul.head())
+        #     self.df = pd.concat([vul, nonvul])
+        # if partition == "val":
+        #     # vul = self.df[self.df.vul == 1].sample(128, random_state=0)
+        #     vul = self.df[self.df.vul == 1]
+        #     nonvul = self.df[self.df.vul == 0]
+        #     nonvul = nonvul.sample(min(len(vul), len(nonvul)), random_state=0)
+        #     self.df = pd.concat([vul, nonvul])
+        #
+        # # Correct ratio for test set
+        # if partition == "test":
+        #     vul = self.df[self.df.vul == 1]
+        #     nonvul = self.df[self.df.vul == 0]
+        #     # nonvul = nonvul.sample(min(len(nonvul), len(vul) * 20), random_state=0)
+        #     nonvul = nonvul.sample(1024, random_state=0)
+        #     self.df = pd.concat([vul, nonvul])
 
         # print("3",self.df.keys())
         # print(self.df.head(5))
 
-        # Small sample (for debugging):
-        if sample > 0:
-            self.df = self.df.sample(sample, random_state=0)
+        # # Small sample (for debugging):
+        # if sample > 0:
+        #     self.df = self.df.sample(sample, random_state=0)
         # print("3.1",self.df.keys())
 
-        # Filter only vulnerable
-        if vulonly:
-            self.df = self.df[self.df.vul == 1]
+        # # Filter only vulnerable
+        # if vulonly:
+        #     self.df = self.df[self.df.vul == 1]
         # print("3.2",self.df.keys())
 
         # Filter out samples with no lineNumber from Joern output
         self.df["valid"] = svd.dfmp(
-            self.df, BigVulDataset.check_validity, 'id', desc="Validate Samples: "
+            self.df, InputDatsset.check_validity, 'id', desc="Validate Samples: "
         )
         # print("3.3",self.df.keys())
         # print(self.df["valid"].head(5))
@@ -93,7 +93,7 @@ class BigVulDataset:
 
     def itempath(_id):
         """Get itempath path from item id."""
-        return svd.processed_dir() / f"bigvul/before/{_id}.c"
+        return svd.processed_dir() / f"test_case/before/{_id}.c"
 
     def check_validity(_id):
         """Check whether sample with id=_id has node/edges.
@@ -105,8 +105,8 @@ class BigVulDataset:
         """
         valid = 0
         try:
-            with open(str(BigVulDataset.itempath(_id)) + ".nodes.json", "r") as f:
-                # print(str(BigVulDataset.itempath(_id)) + ".nodes.json")
+            with open(str(InputDatsset.itempath(_id)) + ".nodes.json", "r") as f:
+                # print(str(InputDatsset.itempath(_id)) + ".nodes.json")
                 nodes = json.load(f)
                 lineNums = set()
                 for n in nodes:
@@ -117,14 +117,14 @@ class BigVulDataset:
                             break
                 if valid == 0:
                     return False
-            with open(str(BigVulDataset.itempath(_id)) + ".edges.json", "r") as f:
+            with open(str(InputDatsset.itempath(_id)) + ".edges.json", "r") as f:
                 edges = json.load(f)
                 edge_set = set([i[2] for i in edges])
                 if "REACHING_DEF" not in edge_set and "CDG" not in edge_set:
                     return False
                 return True
         except Exception as E:
-            print(E, str(BigVulDataset.itempath(_id)))
+            print(E, str(InputDatsset.itempath(_id)))
             return False
 
     def get_vuln_indices(self, _id):
@@ -148,4 +148,4 @@ class BigVulDataset:
     def __repr__(self):
         """Override representation."""
         vulnperc = round(len(self.df[self.df.vul == 1]) / len(self), 3)
-        return f"BigVulDataset(partition={self.partition}, samples={len(self)}, vulnperc={vulnperc})"
+        return f"InputDatsset(partition={self.partition}, samples={len(self)}, vulnperc={vulnperc})"

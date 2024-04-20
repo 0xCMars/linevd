@@ -67,6 +67,7 @@ def get_metrics_logits(true, logits):
         pos_logits = sm_logits[:, 1].detach().cpu().numpy()
         logits = logits.detach().cpu().numpy()
     f1_threshold = best_f1(true, pos_logits)
+    print("f1_threshold is" + str(f1_threshold))
     pred = [1 if i > f1_threshold else 0 for i in pos_logits]
     try:
         roc_auc = roc_auc_score(true, logits[:, 1])
