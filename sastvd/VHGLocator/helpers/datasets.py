@@ -81,7 +81,7 @@ def InputData(minimal=True, sample=False, return_raw=False, splits="default"):
     df = pd.read_csv(svd.external_dir() / filename)
     # print(df.keys())
     df = df.rename(columns={"Unnamed: 0": "id"})
-    print("After rename:", df.keys())
+    # print("After rename:", df.keys())
 
     df["dataset"] = "test_case"
 
@@ -102,65 +102,11 @@ def InputData(minimal=True, sample=False, return_raw=False, splits="default"):
     # Assign info and save
     df["info"] = svd.dfmp(df, svdg.allfunc, cs=500)
     df = pd.concat([df, pd.json_normalize(df["info"])], axis=1)
-    # print("Assign info and save:", df.shape)
-
-    # # POST PROCESSING
-    # dfv = df[df.vul == 1]
-    # # print("Assign info and save:", dfv.shape)
-    # # print(dfv["vul"].head(10))
-    # # x = dfv.apply(
-    # #     lambda x: print(x.added), axis=1
-    # # )
-    # # print(dfv.func_before[0])
-    #
-    # # No added or removed but vulnerable
-    # dfv = dfv[~dfv.apply(lambda x: len(x.added) == 0 and len(x.removed) == 0, axis=1)]
-    # # print(dfv.func_before)
-    # # Remove functions with abnormal ending (no } or ;)
-    # dfv = dfv[
-    #     ~dfv.apply(
-    #         lambda x: x.func_before.strip()[-1] != "}" and x.func_before.strip()[-1] != ";",
-    #         axis=1,
-    #     )
-    # ]
-    # # print("func_before.strip", dfv.shape)
-    #
-    # dfv = dfv[
-    #     ~dfv.apply(
-    #         lambda x: x.func_after.strip()[-1] != "}" and x.after.strip()[-1:] != ";",
-    #         axis=1,
-    #     )
-    # ]
-    # # print("func_after.strip", dfv.shape)
-    #
-    # # Remove functions with abnormal ending (ending with ");")
-    # dfv = dfv[~dfv.func_before.apply(lambda x: x[-2:] == ");")]
-    # # print("Remove functions with abnormal ending", dfv.shape)
-    #
-    # # Remove samples with mod_prop > 0.5
-    # # dfv["mod_prop"] = dfv.apply(
-    # #     lambda x: (x.add_lines + x.del_lines) / len(x["func_after"].splitlines()), axis=1
-    # # )
-    # #
-    # # dfv = dfv.sort_values("mod_prop", ascending=0)
-    # # dfv = dfv[dfv.mod_prop < 0.7]
-    # # print("Remove functions with abnormal ending", dfv.shape)
-    #
-    # # Remove functions that are too short
-    # # dfv = dfv[dfv.apply(lambda x: len(x.func_before.splitlines()) > 5, axis=1)]
-    # # print(dfv["vul"].tail(100))
-    #
-    # # Filter by post-processing filtering
-    # keep_vuln = set(dfv.id.tolist())
-    # # print(len(keep_vuln))
-    # df = df[(df.id.isin(keep_vuln) | (df.vul == 0))].copy()
-    # # print(df.shape)
-    # # print(df["vul"].tail(100))
 
     # Make splits
     df = train_val_test_split_df(df, "id", "vul")
     # print(df["vul"].tail(100))
-    print(df.before.head())
+    # print(df.before.head())
 
     keepcols = [
         "dataset",
